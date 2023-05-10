@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, render_template, request
 import openai
 import json
 import utils
@@ -24,7 +24,7 @@ heartbeats = {}
 def heartbeat_post():
     data = json.loads(request.data)
 
-    heartbeats[data.bot_id] = data
+    heartbeats[data["bot_id"]] = data
 
     return 'Ok'
 
@@ -46,7 +46,7 @@ def ticket_get_by_id(ticket_id):
 def ticket_update_by_id(ticket_id):
     ticket = tickets.get(ticket_id)
     data = json.loads(request.data)
-    if not data.status or data.status not in ["open", "in progress", "closed"]:
+    if not data["status"] or data["status"] not in ["open", "in progress", "closed"]:
         return "invalid status", 400
     if not ticket:
         return "ticket not found", 404
@@ -54,9 +54,9 @@ def ticket_update_by_id(ticket_id):
     # Update the ticket
     ticket = {
         **ticket,
-        "status": data.status
+        "status": data["status"]
     }
-    tickets[ticket.ticket_id] = ticket
+    tickets[ticket["ticket_id"]] = ticket
 
     return 'Ok'
 
@@ -73,4 +73,7 @@ def report_post(bot_id: str):
     if error:
         return error, 400
 
-    return json.dumps(utils.create_ticket(bot_id, gpt_response))
+    ticket = utils.create_ticket(bot_id, gpt_response)
+
+    tickets[ticket["ticket_id"]] = ticket
+    return json.dumps(ticket)
